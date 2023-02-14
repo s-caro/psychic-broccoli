@@ -18,9 +18,9 @@ def build_graph(num_nodes):
 
     G = nx.powerlaw_cluster_graph(num_nodes, 3, 0.4)
     
-    pos = nx.spring_layout(G)
+    pos = nx.planar_layout(G)
     nx.draw(G, pos=pos, node_size=300, edgecolors='k', cmap='hsv', with_labels=True)
-    print(G.edges())
+    #print(G.edges())
     plt.savefig("original_graph_partitioning.png")
 
     return G, pos
@@ -35,15 +35,16 @@ def build_cqm(G,k):
     cqm = ConstrainedQuadraticModel()
 
     # Add binary variable, the binary variable x_(i,k) is set ot 1 if the node i is assigned to partition k
-    v =[[Binary(f'v_{i},{p}') for p in partitions] for i in G.nodes]
-
+    #v =[[Binary(f'v_{i},{p}') for p in partitions] for i in G.nodes]
+    v = {i: {p: Binary((i,p)) for p in partitions} for i in G.nodes}
     # Constraint 1: each node is assigned only to one partition
     #for i in G.nodes:
     #    cqm.add_constraint(quicksum(v[i][k] for k in partitions) == 1, label=f'one-hot-node-{i}')
 
     # is equivalent to this? this is the original from dwave
     for i in G.nodes:
-        cqm.add_discrete([f'v_{i},{k}' for k in partitions], label=f'one-hot-node-{i}')
+        cqm.add_discrete([(i,p) for p in partitions])
+        #cqm.add_discrete([f'v_{i},{k}' for k in partitions], label=f'one-hot-node-{i}')
 
     for p in partitions:
         #print("\nAdding partition size constraint for partition", k)
@@ -54,10 +55,10 @@ def build_cqm(G,k):
     for i,j in G.edges:
         for p in partitions:
             min_edges.append(v[i][p]+v[j][p]-2*v[i][p]*v[j][p])
-    cqm.set_objective(sum(min_edges))
+    cqm.set_objective(16*sum(min_edges))
     return cqm
 
-def run_resolution(cqm, sampler_cqm,):
+def run_resolution(cqm):
     """Send the CQM to the sampler and return the best sample found.
     Args:
         cqm (ConstrainedQuadraticModel): The CQM for our problem
@@ -66,16 +67,17 @@ def run_resolution(cqm, sampler_cqm,):
     Returns:
         dict: The first feasible solution found
     """
-
+    sampler = LeapHybridCQMSampler()
     # Initialize the solver
     print("\nSending to the cqm solver...")
     
     # Solve the CQM problem using the solver
-    sampleset_cqm = sampler_cqm.sample_cqm(cqm, 4*sampler_cqm.min_time_limit(cqm), label='Example - Graph Partitioning cqm')
+    sampleset_cqm = sampler.sample_cqm(cqm, 4*sampler.min_time_limit(cqm), label='Example - Graph Partitioning cqm')
 
-    print("qpu_access_time: ", sampleset_cqm.info['qpu_access_time'])
-    print("run_time: ", sampleset_cqm.info['run_time'])
+    print("qpu_access_time: ", sampleset_cqm.info['qpu_access_time'], " us")
+    print("run_time: ", sampleset_cqm.info['run_time'], " us")
     # Return the first feasible solution
+    print(sampleset_cqm.first)
     soln = {key[0]: key[1] for key, val in sampleset_cqm.first.sample.items() if val == 1.0}
 
     return soln
@@ -94,12 +96,13 @@ def plot_soln(sample, pos):
     print("\nProcessing sample...")
 
     node_colors_num = [sample[i] for i in G.nodes()]
-    numToColor = {0: 'yellow', 1: 'blue', 2: 'red', 3:'green'}
+    numToColor = {0: 'yellow', 1: 'blue'}
+    #, 2: 'red', 3:'green'
     node_colors = []
     for i in node_colors_num:
         node_colors.append(numToColor[i])
-    print(node_colors_num)
-    print(node_colors)
+    #print(node_colors_num)
+    #print(node_colors)
     nx.draw(G, pos=pos, node_color=node_colors, node_size=300, edgecolors='k', cmap='hsv',with_labels=True)
     fname = 'graph_result_partitioning.png'
     plt.savefig(fname)
@@ -111,16 +114,15 @@ def plot_soln(sample, pos):
 # ------- Main program -------
 if __name__ == "__main__":
 
-    num_nodes = 20
+    num_nodes = 11
 
     G, pos= build_graph(num_nodes)
     print("\nCreating cqm model...")
-    cqm = build_cqm(G, 4)
+    cqm = build_cqm(G, 2)
 
-    sampler_cqm = LeapHybridCQMSampler()
 
     
-    sample_cqm = run_resolution(cqm, sampler_cqm)
+    sample_cqm = run_resolution(cqm)
     
-
+    #print(sample_cqm)
     plot_soln(sample_cqm, pos)
