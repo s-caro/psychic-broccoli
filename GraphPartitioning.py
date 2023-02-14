@@ -1,6 +1,7 @@
 from dimod import Binary, ConstrainedQuadraticModel, quicksum, BinaryQuadraticModel
 from dwave.system import LeapHybridCQMSampler, DWaveSampler, EmbeddingComposite
 import networkx as nx
+from dwave.cloud import Client
 
 import matplotlib
 
@@ -17,12 +18,10 @@ def build_graph(num_nodes):
 
     G = nx.powerlaw_cluster_graph(num_nodes, 3, 0.4)
     
-    G = nx.Graph([(0, 3), (0, 4), (0, 6), (0, 7), (1, 3), (1, 4), (1, 5), (2, 3), (2, 5), (3, 4), (3, 6), (3, 7), (4, 5), (4, 6), (6, 7)])
     pos = nx.spring_layout(G)
-    nx.draw(G, pos=pos, node_size=50, edgecolors='k', cmap='hsv')
-    plt.savefig("original_graph.png")
-
-    print(G.edges)
+    nx.draw(G, pos=pos, node_size=300, edgecolors='k', cmap='hsv', with_labels=True)
+    print(G.edges())
+    plt.savefig("original_graph_partitioning.png")
 
     return G, pos
 
@@ -74,28 +73,54 @@ def run_resolution(cqm, sampler_cqm,):
     # Solve the CQM problem using the solver
     sampleset_cqm = sampler_cqm.sample_cqm(cqm, 4*sampler_cqm.min_time_limit(cqm), label='Example - Graph Partitioning cqm')
 
+    print("qpu_access_time: ", sampleset_cqm.info['qpu_access_time'])
+    print("run_time: ", sampleset_cqm.info['run_time'])
     # Return the first feasible solution
+    soln = {key[0]: key[1] for key, val in sampleset_cqm.first.sample.items() if val == 1.0}
 
-    return sampleset_cqm
+    return soln
 
+def plot_soln(sample, pos):
+    """Plot results and save file.
+    
+    Args:
+        sample (dict):
+            Sample containing a solution. Each key is a node and each value 
+            is an int representing the node's color.
+        pos (dict):
+            Plotting information for graph so that same graph shape is used.
+    """
 
+    print("\nProcessing sample...")
+
+    node_colors_num = [sample[i] for i in G.nodes()]
+    numToColor = {0: 'yellow', 1: 'blue', 2: 'red', 3:'green'}
+    node_colors = []
+    for i in node_colors_num:
+        node_colors.append(numToColor[i])
+    print(node_colors_num)
+    print(node_colors)
+    nx.draw(G, pos=pos, node_color=node_colors, node_size=300, edgecolors='k', cmap='hsv',with_labels=True)
+    fname = 'graph_result_partitioning.png'
+    plt.savefig(fname)
+
+    print("\nSaving results in {}...".format(fname))
 
 
 
 # ------- Main program -------
 if __name__ == "__main__":
 
-    num_nodes = 8
+    num_nodes = 20
 
-    G, pos = build_graph(num_nodes)
+    G, pos= build_graph(num_nodes)
     print("\nCreating cqm model...")
-    cqm = build_cqm(G, 2)
+    cqm = build_cqm(G, 4)
 
     sampler_cqm = LeapHybridCQMSampler()
 
     
     sample_cqm = run_resolution(cqm, sampler_cqm)
+    
 
-    print(sample_cqm.first)
-
-
+    plot_soln(sample_cqm, pos)
