@@ -41,10 +41,10 @@ def _add_constraint(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Graph
         g: the graph that we want to draw
     """
     for v in g.nodes():
-        cqm.add_constraint((g.degree(v)*vars.x[v]-quicksum(vars.x[u] for u,v in g.edges()))==0,label=f'x_constraint_node_{v}')
-        cqm.add_constraint((g.degree(v)*vars.y[v]-quicksum(vars.y[u] for u,v in g.edges()))==0,label=f'y_constraint_node_{v}')
+        cqm.add_constraint((g.degree(v)*vars.x[v]-quicksum(vars.x[u] for u in g.neighbors(v)))==0,label=f'x_constraint_node_{v}')
+        cqm.add_constraint((g.degree(v)*vars.y[v]-quicksum(vars.y[u] for u in g.neighbors(v)))==0,label=f'y_constraint_node_{v}')
 
-def _define_objective(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Graph()):
+def _define_objective(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Graph(), no_nodes: list):
     """objective function of the problem, minimize the distance of each point from the barycenter position
 
     Args:
@@ -52,12 +52,11 @@ def _define_objective(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Gra
         vars: the x and y coordinates of the points
         g: the graph that we want to draw
     """
-    
-    x_obj_term = quicksum((g.degree(v)*vars.x[v]-quicksum(vars.x[u] for u,v in g.edges()))**2 for v in g.nodes())
-    y_obj_term = quicksum((g.degree(v)*vars.y[v]-quicksum(vars.y[u] for u,v in g.edges()))**2 for v in g.nodes())
-    print(x_obj_term)
-    x_obj_coefficient = 1
-    y_obj_coefficient = 1
+    nodes = list(set(g.nodes)-set(no_nodes))
+    x_obj_term = quicksum((g.degree(v)*vars.x[v]-quicksum(vars.x[u] for u in g.neighbors(v)))**2 for v in nodes)
+    y_obj_term = quicksum((g.degree(v)*vars.y[v]-quicksum(vars.y[u] for u in g.neighbors(v)))**2 for v in nodes)
+    x_obj_coefficient = 10
+    y_obj_coefficient = 10
     cqm.set_objective(x_obj_coefficient*x_obj_term + y_obj_coefficient*y_obj_term)
 
 def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list) -> ConstrainedQuadraticModel:
@@ -72,34 +71,45 @@ def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list) -> Constrained
         A ''dimod.CQM'' object that defines the Tutte's barycenter method
     """
     cqm = ConstrainedQuadraticModel()
-    #_add_variable(cqm, 0, 1, g)
-
-    _add_constraint(cqm, vars, g)
-
-    
-    _define_objective(cqm, vars, g)
-    cqm.substitute_self_loops()
+    _add_variable(cqm, 0, 6, g)
+    #print(vars)
+    no_nodes = []
     for el in fixed_points:
-        cqm.fix_variable(f'x_{el[0]}',el[1])
-        cqm.fix_variable(f'y_{el[0]}', el[2])
+        #print(el)
+        no_nodes.append(el[0])
+        cqm.add_constraint(vars.x[el[0]] == el[1],label=f'x_constraint_node_{el[0]}')
+        cqm.add_constraint(vars.y[el[0]] == el[2], label=f'y_constraint_node_{el[0]}')
+    #print(cqm.variables)
+    #print(cqm.constraints)
+    _define_objective(cqm, vars, g, no_nodes)
+    #print(cqm.variables)
+    #_add_constraint(cqm, vars, g)
+    
+    #cqm.substitute_self_loops()
+    
+    print(cqm.objective)
+    #print(cqm.constraints)
+    
     return cqm
 
 def call_solver(cqm: ConstrainedQuadraticModel) -> SampleSet:
     sampler = LeapHybridCQMSampler()
-    res = sampler.sample_cqm(cqm, label="Tutte's barycenter method")
+    res = sampler.sample_cqm(cqm, 4*sampler.min_time_limit(cqm), label="Tutte's barycenter method")
     return res.first
 
 if __name__ == '__main__':
 
     num_nodes = 4
     G = build_graph(num_nodes)
-    G = nx.from_edgelist([(0,1),(0,4),(0,3),(1,5),(1,2),(2,6),(2,3),(3,7),(4,5),(4,7),(5,6),(6,7)])
+    #G = nx.from_edgelist([(0,1),(1,2),(2,0),(0,3),(1,3),(2,3)])
+    G = nx.from_edgelist([(0,1),(0,4),(0,3),(1,5),(1,2),(2,3),(2,6),(3,7),(4,5),(4,7),(5,6),(6,7)])
     #print(type(G.nodes()))
-    upperBound = 3
+    upperBound = 6
     lowerBound = 0
     vars = Variables(G.nodes(), lowerBound, upperBound)
     
-    fixed_points = [(0,0,3),(1,3,3),(2,3,0),(3,0,0)]
+    #fixed_points = [(0,0,0),(1,2,6),(2,4,0)]
+    fixed_points = [(0,0,0),(1,0,6),(2,6,6),(3,6,0)]
     cqm = build_cqm(vars, G, fixed_points)
     
     best_feasible = call_solver(cqm)

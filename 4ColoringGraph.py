@@ -1,7 +1,9 @@
 import matplotlib
 import networkx as nx
-from dimod import ConstrainedQuadraticModel, Binary, quicksum
-from dwave.system import LeapHybridCQMSampler
+from dimod import ConstrainedQuadraticModel, Binary, quicksum, cqm_to_bqm, BinaryQuadraticModel
+from dwave.system import LeapHybridCQMSampler, DWaveSampler, EmbeddingComposite
+
+import dwave.inspector
 
 try:
     import matplotlib.pyplot as plt
@@ -26,6 +28,9 @@ def build_graph(num_nodes):
     plt.savefig("original_graph_coloring.png")
 
     return G, pos
+
+
+    
 
 def build_cqm(G, num_colors):
     """Build CQM model."""
@@ -67,7 +72,6 @@ def run_hybrid_solver(cqm):
     print(feasible_sampleset.first)
 
 
-
     try:
         sample = feasible_sampleset.first.sample
     except:
@@ -104,13 +108,65 @@ def plot_soln(sample, pos):
 
     print("\nSaving results in {}...".format(fname))
 
+def solve_and_print_bqm(G, num_colors ,pos):
+    bqm = BinaryQuadraticModel('BINARY')
+
+    x =[[f'x_{n}{c}' for c in range(num_colors)] for n in G.nodes]
+
+    for n in G.nodes:
+        for c in range(num_colors):
+            bqm.add_variable(x[n][c])
+
+    c1 = [(x[n][c],1) for c in range(num_colors) for n in G.nodes]
+    bqm.add_linear_equality_constraint(c1, 10, -1)
+
+    
+    for c in range(num_colors):
+        c3 = [(x[u][c] + x[v][c], 1) for u,v in G.edges]
+        bqm.add_linear_inequality_constraint(c3, constant=-1, lagrange_multiplier=10, label=f'c3_color_{c}')
+        
+    sampler = EmbeddingComposite(DWaveSampler())
+    sampleset = sampler.sample(bqm, num_reads=1000)
+
+
+    print(sampleset.first)
+
+
+    try:
+        sample = sampleset.first.sample
+    except:
+        print("\nNo feasible solutions found.")
+        exit()
+
+    soln = {key[0]: key[1] for key, val in sample.items() if val == 1}
+
+    print("\nProcessing sample...")
+
+    node_colors_num = [soln[i] for i in G.nodes()]
+    numToColor = {0: 'yellow', 1: 'blue', 2: 'red', 3:'green'}
+    node_colors = []
+    for i in node_colors_num:
+        node_colors.append(numToColor[i])
+    #print(node_colors_num)
+    #print(node_colors)
+    nx.draw(G, pos=pos, node_color=node_colors, node_size=300, edgecolors='k', cmap='hsv',with_labels=True)
+    fname = 'graph_result_coloring_bqm.png'
+    plt.savefig(fname)
+
+    print("\nSaving results in {}...".format(fname))
+
+
 # ------- Main program -------
 if __name__ == "__main__":
 
-    num_nodes = 33
+    num_nodes = 5
 
     G, pos = build_graph(num_nodes)
     num_colors = 4
+    solve_and_print_bqm(G, num_colors, pos)
+
+   
+
     
     cqm = build_cqm(G, num_colors)
 
