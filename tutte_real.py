@@ -14,8 +14,8 @@ class Variables:
     """
 
     def __init__(self, nodes: nx.Graph.nodes, lowerBound: float, upperBound: float):
-        self.x = {i: Integer(f'x_{i}',lower_bound = lowerBound, upper_bound = upperBound) for i in nodes}
-        self.y = {i: Integer(f'y_{i}',lower_bound = lowerBound, upper_bound = upperBound) for i in nodes}
+        self.x = {i: Real(f'x_{i}',lower_bound = lowerBound, upper_bound = upperBound) for i in nodes}
+        self.y = {i: Real(f'y_{i}',lower_bound = lowerBound, upper_bound = upperBound) for i in nodes}
 
 
 def build_graph(num_nodes):
@@ -29,11 +29,11 @@ def build_graph(num_nodes):
 
 def _add_variable(cqm: ConstrainedQuadraticModel, lowerBound: float, upperBound: float, g: nx.Graph()):
     for i in G.nodes():
-        cqm.add_variable('INTEGER',f'x_{i}',lower_bound = lowerBound, upper_bound = upperBound)
-        cqm.add_variable('INTEGER',f'y_{i}',lower_bound = lowerBound, upper_bound = upperBound)
+        cqm.add_variable('REAL',f'x_{i}',lower_bound = lowerBound, upper_bound = upperBound)
+        cqm.add_variable('REAL',f'y_{i}',lower_bound = lowerBound, upper_bound = upperBound)
 
 
-def _add_constraint(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Graph()):
+def _add_constraint(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Graph(), no_nodes: list):
     """constraint on the x and y position of the nodes, each node must be on the barycenter of its neighbour
 
     Args:
@@ -41,24 +41,10 @@ def _add_constraint(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Graph
         vars: the x and y coordinates of the points
         g: the graph that we want to draw
     """
-    for v in g.nodes():
+    nodes = list(set(g.nodes)-set(no_nodes))
+    for v in nodes:
         cqm.add_constraint((g.degree(v)*vars.x[v]-quicksum(vars.x[u] for u in g.neighbors(v)))==0,label=f'x_constraint_node_{v}')
         cqm.add_constraint((g.degree(v)*vars.y[v]-quicksum(vars.y[u] for u in g.neighbors(v)))==0,label=f'y_constraint_node_{v}')
-
-def _define_objective(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Graph(), no_nodes: list):
-    """objective function of the problem, minimize the distance of each point from the barycenter position
-
-    Args:
-        cqm: the model
-        vars: the x and y coordinates of the points
-        g: the graph that we want to draw
-    """
-    nodes = list(set(g.nodes)-set(no_nodes))
-    x_obj_term = quicksum((g.degree(v)*vars.x[v]-quicksum(vars.x[u] for u in g.neighbors(v)))**2 for v in nodes)
-    y_obj_term = quicksum((g.degree(v)*vars.y[v]-quicksum(vars.y[u] for u in g.neighbors(v)))**2 for v in nodes)
-    x_obj_coefficient = 1
-    y_obj_coefficient = 1
-    cqm.set_objective(x_obj_coefficient*x_obj_term + y_obj_coefficient*y_obj_term)
 
 def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list, upperBound: int) -> ConstrainedQuadraticModel:
     """objective function of the problem, minimize the distance of each point from the barycenter position
@@ -82,9 +68,9 @@ def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list, upperBound: in
         cqm.add_constraint(vars.y[el[0]] == el[2], label=f'y_constraint_node_{el[0]}')
     #print(cqm.variables)
     #print(cqm.constraints)
-    _define_objective(cqm, vars, g, no_nodes)
+    #_define_objective(cqm, vars, g, no_nodes)
     #print(cqm.variables)
-    #_add_constraint(cqm, vars, g)
+    _add_constraint(cqm, vars, g, no_nodes)
     
     #cqm.substitute_self_loops()
     
@@ -138,4 +124,4 @@ if __name__ == '__main__':
     
     nx.draw(G, pos=pos, node_size=300, edgecolors='k', cmap='hsv', with_labels=True)
     #print(G.edges())
-    plt.savefig("tutte_draw.png")
+    plt.savefig("tutte_draw_real.png")
