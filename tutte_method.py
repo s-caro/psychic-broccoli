@@ -23,7 +23,7 @@ def build_graph(num_nodes):
 
     print("\nBuilding graph...")
 
-    G = nx.powerlaw_cluster_graph(num_nodes, 2, 0.4)
+    G = nx.powerlaw_cluster_graph(num_nodes, 3, 0.0)
 
     return G
 
@@ -73,23 +73,16 @@ def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list, upperBound: in
     """
     cqm = ConstrainedQuadraticModel()
     _add_variable(cqm, 0, upperBound, g)
-    #print(vars)
     no_nodes = []
     for el in fixed_points:
-        #print(el)
         no_nodes.append(el[0])
         cqm.add_constraint(vars.x[el[0]] == el[1],label=f'x_constraint_node_{el[0]}')
         cqm.add_constraint(vars.y[el[0]] == el[2], label=f'y_constraint_node_{el[0]}')
-    #print(cqm.variables)
-    #print(cqm.constraints)
+
     _define_objective(cqm, vars, g, no_nodes)
-    #print(cqm.variables)
-    #_add_constraint(cqm, vars, g)
     
-    #cqm.substitute_self_loops()
     
-    print(cqm.objective)
-    #print(cqm.constraints)
+    #print(cqm.objective)
     
     return cqm
 
@@ -119,23 +112,21 @@ if __name__ == '__main__':
     G = build_graph(num_nodes)
     #G = nx.from_edgelist([(0,1),(1,2),(2,0),(0,3),(1,3),(2,3)])
     #G = nx.from_edgelist([(0,1),(0,4),(0,3),(1,5),(1,2),(2,3),(2,6),(3,7),(4,5),(4,7),(5,6),(6,7)])
-    G = nx.from_edgelist([(0,1),(0,2),(0,3),(0,4),(0,6),(1,3),(1,4),(1,2),(1,5),(2,3),(2,5),(2,6),(3,4),(3,5),(3,6)])
-    #print(type(G.nodes()))
-    upperBound = 12
+    #G = nx.from_edgelist([(0,1),(0,2),(0,3),(0,4),(0,6),(1,3),(1,4),(1,2),(1,5),(2,3),(2,5),(2,6),(3,4),(3,5),(3,6)])
+    G =nx.from_edgelist([(0,1),(0,7),(0,4),(1,9),(1,2),(2,3),(2,19),(3,4),(3,17),(4,5),(5,6),(5,16),(6,7),(6,13),(7,8),(8,9),(8,12),(9,10),(10,11),(10,19),(11,12),(11,15),(12,13),(13,14),(14,15),(14,16),(15,18),(16,17),(17,18),(18,19)])
+    upperBound = 100
     lowerBound = 0
     vars = Variables(G.nodes(), lowerBound, upperBound)
     
     #fixed_points = [(0,0,0),(1,2,6),(2,4,0)]
     #fixed_points = [(0,0,0),(1,0,6),(2,6,6),(3,6,0)]
-    fixed_points = [(0,0,0),(1,6,10),(2,12,0)]
+    #fixed_points = [(0,0,0),(1,6,10),(2,12,0)]
+    fixed_points = [(0,0,45),(1,50,100),(2,100,45),(3,80,0),(4,20,0)]
     cqm = build_cqm(vars, G, fixed_points, upperBound)
     
     best_feasible = call_solver(cqm)
-    #print(best_feasible.info)
     print(best_feasible)
-    #best_feasible = {'x_0': 0.0, 'x_1': 6.0, 'x_2': 12.0, 'x_3': 6.0, 'x_4': 4.0, 'x_5': 8.0, 'x_6': 6.0, 'y_0': 0.0, 'y_1': 10.0, 'y_2': 0.0, 'y_3': 3.0, 'y_4': 4.0, 'y_5': 4.0, 'y_6': 1.0}
     pos = create_pos_for_drawing(best_feasible[0])
     
     nx.draw(G, pos=pos, node_size=300, edgecolors='k', cmap='hsv', with_labels=True)
-    #print(G.edges())
     plt.savefig("tutte_draw.png")
