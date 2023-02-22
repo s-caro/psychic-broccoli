@@ -82,7 +82,7 @@ def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list, upperBound: in
     _define_objective(cqm, vars, g, no_nodes)
     
     
-    #print(cqm.objective)
+    print(cqm.objective)
     
     return cqm
 
@@ -113,7 +113,8 @@ if __name__ == '__main__':
     #G = nx.from_edgelist([(0,1),(1,2),(2,0),(0,3),(1,3),(2,3)])
     #G = nx.from_edgelist([(0,1),(0,4),(0,3),(1,5),(1,2),(2,3),(2,6),(3,7),(4,5),(4,7),(5,6),(6,7)])
     #G = nx.from_edgelist([(0,1),(0,2),(0,3),(0,4),(0,6),(1,3),(1,4),(1,2),(1,5),(2,3),(2,5),(2,6),(3,4),(3,5),(3,6)])
-    G =nx.from_edgelist([(0,1),(0,7),(0,4),(1,9),(1,2),(2,3),(2,19),(3,4),(3,17),(4,5),(5,6),(5,16),(6,7),(6,13),(7,8),(8,9),(8,12),(9,10),(10,11),(10,19),(11,12),(11,15),(12,13),(13,14),(14,15),(14,16),(15,18),(16,17),(17,18),(18,19)])
+    #G =nx.from_edgelist([(0,1),(0,7),(0,4),(1,9),(1,2),(2,3),(2,19),(3,4),(3,17),(4,5),(5,6),(5,16),(6,7),(6,13),(7,8),(8,9),(8,12),(9,10),(10,11),(10,19),(11,12),(11,15),(12,13),(13,14),(14,15),(14,16),(15,18),(16,17),(17,18),(18,19)])
+    G = nx.from_edgelist([(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,2),(1,3),(2,3),(2,4),(2,5),(2,6),(3,4),(4,5),(5,6)])
     upperBound = 100
     lowerBound = 0
     vars = Variables(G.nodes(), lowerBound, upperBound)
@@ -121,7 +122,8 @@ if __name__ == '__main__':
     #fixed_points = [(0,0,0),(1,2,6),(2,4,0)]
     #fixed_points = [(0,0,0),(1,0,6),(2,6,6),(3,6,0)]
     #fixed_points = [(0,0,0),(1,6,10),(2,12,0)]
-    fixed_points = [(0,0,45),(1,50,100),(2,100,45),(3,80,0),(4,20,0)]
+    #fixed_points = [(0,0,45),(1,50,100),(2,100,45),(3,80,0),(4,20,0)]
+    fixed_points = [(0,0,0),(1,50,100),(2,100,0)]
     cqm = build_cqm(vars, G, fixed_points, upperBound)
     
     best_feasible = call_solver(cqm)
@@ -129,4 +131,4 @@ if __name__ == '__main__':
     pos = create_pos_for_drawing(best_feasible[0])
     
     nx.draw(G, pos=pos, node_size=300, edgecolors='k', cmap='hsv', with_labels=True)
-    plt.savefig("tutte_draw.png")
+    plt.savefig("tutte_draw_integer_stacked.png")

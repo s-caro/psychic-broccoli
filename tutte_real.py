@@ -46,6 +46,21 @@ def _add_constraint(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Graph
         cqm.add_constraint((g.degree(v)*vars.x[v]-quicksum(vars.x[u] for u in g.neighbors(v)))==0,label=f'x_constraint_node_{v}')
         cqm.add_constraint((g.degree(v)*vars.y[v]-quicksum(vars.y[u] for u in g.neighbors(v)))==0,label=f'y_constraint_node_{v}')
 
+def _define_objective(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Graph(), no_nodes: list):
+    """objective function of the problem, minimize the distance of each point from the barycenter position
+
+    Args:
+        cqm: the model
+        vars: the x and y coordinates of the points
+        g: the graph that we want to draw
+    """
+    nodes = list(set(g.nodes)-set(no_nodes))
+    x_obj_term = quicksum((g.degree(v)*vars.x[v]-quicksum(vars.x[u] for u in g.neighbors(v))) for v in nodes)
+    y_obj_term = quicksum((g.degree(v)*vars.y[v]-quicksum(vars.y[u] for u in g.neighbors(v))) for v in nodes)
+    x_obj_coefficient = 1
+    y_obj_coefficient = 1
+    cqm.set_objective(x_obj_coefficient*x_obj_term + y_obj_coefficient*y_obj_term)
+
 def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list, upperBound: int) -> ConstrainedQuadraticModel:
     """objective function of the problem, minimize the distance of each point from the barycenter position
 
@@ -68,7 +83,7 @@ def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list, upperBound: in
         cqm.add_constraint(vars.y[el[0]] == el[2], label=f'y_constraint_node_{el[0]}')
     #print(cqm.variables)
     #print(cqm.constraints)
-    #_define_objective(cqm, vars, g, no_nodes)
+    _define_objective(cqm, vars, g, no_nodes)
     #print(cqm.variables)
     _add_constraint(cqm, vars, g, no_nodes)
     
@@ -82,7 +97,7 @@ def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list, upperBound: in
 def call_solver(cqm: ConstrainedQuadraticModel) -> SampleSet:
     sampler = LeapHybridCQMSampler()
     #4*sampler.min_time_limit(cqm),
-    res = sampler.sample_cqm(cqm, 4*sampler.min_time_limit(cqm), label="Tutte's barycenter method")
+    res = sampler.sample_cqm(cqm, label="Tutte's barycenter method")
     return res.first
 
 def create_pos_for_drawing(node_to_pos : dict) -> dict:
@@ -127,4 +142,4 @@ if __name__ == '__main__':
     
     nx.draw(G, pos=pos, node_size=300, edgecolors='k', cmap='hsv', with_labels=True)
     #print(G.edges())
-    plt.savefig("tutte_draw_real_stacked2.png")
+    plt.savefig("tutte_draw_real_stacked_with_obj_4times.png")
