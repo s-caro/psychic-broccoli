@@ -1,6 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
+import dimod
 from dimod import ConstrainedQuadraticModel, Binary, quicksum, Real, SampleSet, Integer
 from dwave.system import LeapHybridCQMSampler
 
@@ -140,11 +141,11 @@ if __name__ == '__main__':
     cqm = build_cqm(vars, G, fixed_points, upperBound)
     
     best_feasible = call_solver(cqm)
-    #print(best_feasible.info)
-    print(best_feasible)
+    print(best_feasible.info)
+    #print(best_feasible)
     #best_feasible = {'x_0': 0.0, 'x_1': 6.0, 'x_2': 12.0, 'x_3': 6.0, 'x_4': 4.0, 'x_5': 8.0, 'x_6': 6.0, 'y_0': 0.0, 'y_1': 10.0, 'y_2': 0.0, 'y_3': 3.0, 'y_4': 4.0, 'y_5': 4.0, 'y_6': 1.0}
     pos = create_pos_for_drawing(best_feasible[0])
     
     nx.draw(G, pos=pos, node_size=300, edgecolors='k', cmap='hsv', with_labels=True)
-    #print(G.edges())
+    #print(G.edges())s
     plt.savefig("titto_draw_real_degree_3_decagono_no_obj_larger.png")
