@@ -4,6 +4,8 @@ import networkx as nx
 from dimod import ConstrainedQuadraticModel, Binary, quicksum, Real, SampleSet, Integer
 from dwave.system import LeapHybridCQMSampler
 
+dimod.REAL_INTERACTIONS =True
+
 class Variables:
     """Class that collects all CQM model variables for the Tutte's barycenter method
 
@@ -59,7 +61,8 @@ def _define_objective(cqm: ConstrainedQuadraticModel, vars: Variables, g: nx.Gra
     y_obj_term = quicksum((g.degree(v)*vars.y[v]-quicksum(vars.y[u] for u in g.neighbors(v))) for v in nodes)
     x_obj_coefficient = 1
     y_obj_coefficient = 1
-    cqm.set_objective(x_obj_coefficient*x_obj_term + y_obj_coefficient*y_obj_term)
+    quadratic_obj_fun = (x_obj_coefficient*x_obj_term + y_obj_coefficient*y_obj_term)**2
+    cqm.set_objective(quadratic_obj_fun)
 
 def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list, upperBound: int) -> ConstrainedQuadraticModel:
     """objective function of the problem, minimize the distance of each point from the barycenter position
