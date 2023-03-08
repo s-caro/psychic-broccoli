@@ -2,6 +2,8 @@ import matplotlib
 import networkx as nx
 from dimod import ConstrainedQuadraticModel, Binary, quicksum, cqm_to_bqm, BinaryQuadraticModel
 from dwave.system import LeapHybridCQMSampler, DWaveSampler, EmbeddingComposite
+import dimod
+import dwave.inspector
 
 import dwave.inspector
 
@@ -43,14 +45,14 @@ def build_cqm(G, num_colors):
     # Build CQM variables
     colors = {n: {c: Binary((n, c)) for c in range(num_colors)} for n in G.nodes}
 
-    # Add constraint to make variables discrete
+    # Add constraint each node can have only one color
     for n in G.nodes():
-        cqm.add_discrete([(n, c) for c in range(num_colors)])
+        cqm.add_discrete([(n, c) for c in range(num_colors)], label = f'1_color_node_{n}')
   
     # Build the constraints: edges have different color end points
     for u, v in G.edges:
         for c in range(num_colors):
-            cqm.add_constraint(colors[u][c]*colors[v][c] == 0)
+            cqm.add_constraint(colors[u][c]+colors[v][c] == 1, label = f'no_adjacent_node_{u},{v}_color_{c}')
 
     return cqm
 
@@ -159,18 +161,31 @@ def solve_and_print_bqm(G, num_colors ,pos):
 # ------- Main program -------
 if __name__ == "__main__":
 
-    num_nodes = 5
+    #num_nodes = 5
 
-    G, pos = build_graph(num_nodes)
-    num_colors = 4
-    solve_and_print_bqm(G, num_colors, pos)
+    #G, pos = build_graph(num_nodes)
+    G = nx.from_edgelist([(0,1),(1,2),(2,3),(3,0)])
+    num_colors = 2
+    #solve_and_print_bqm(G, num_colors, pos)
 
    
 
     
     cqm = build_cqm(G, num_colors)
 
-    sample = run_hybrid_solver(cqm)
-    
+    print(cqm)
+    bqm, invert = dimod.cqm_to_bqm(cqm)
+    #sample = run_hybrid_solver(cqm)
+    #print(bqm)
+    sampleset2 = dimod.ExactSolver().sample(bqm)
+    #print(sampleset.first.sample)
+    print(invert(sampleset2.first.sample))
 
-    plot_soln(sample, pos)
+    Q = bqm.to_qubo()
+
+    sampler = EmbeddingComposite(DWaveSampler(solver=dict(qpu=True)))
+
+    sampleset = sampler.sample(bqm, num_reads=1000, label='Coloring example - Inspector')
+    print(f'Energy: {sampleset.first.energy}')
+    dwave.inspector.show(sampleset)
+    #plot_soln(sample, pos)
