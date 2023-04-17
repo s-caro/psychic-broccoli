@@ -1,0 +1,42 @@
+
+16/04/2023 12:48:22
+
+-------------------------
+
+, (1, 4), (1, 5), (2, 4), (2, 5), (3, 5), (3, 6)
+
+-------------------------
+
+{'constraint_labels': ['L1: >= transitive constraint nodes (5, 6, 4)', 'L1: >= transitive constraint nodes (2, 3, 1)', 'L2: discrete on nodes (5, 6)', 'L1: discrete on nodes (1, 2)', 'L1: discrete on nodes (2, 3)', 'L2: discrete on nodes (4, 6)', 'L1: <= transitive constraint nodes (3, 1, 2)', 'L2: >= transitive constraint nodes (5, 4, 6)', 'L1: >= transitive constraint nodes (6, 4, 5)', 'L1: >= transitive constraint nodes (2, 1, 3)', 'L1: <= transitive constraint nodes (2, 1, 3)', 'L1: >= transitive constraint nodes (3, 2, 1)', 'L1: <= transitive constraint nodes (6, 4, 5)', 'L1: <= transitive constraint nodes (6, 5, 4)', 'L2: <= transitive constraint nodes (5, 4, 6)', 'L1: >= transitive constraint nodes (1, 3, 2)', 'L1: <= transitive constraint nodes (2, 3, 1)', 'L2: >= transitive constraint nodes (4, 6, 5)', 'L1: <= transitive constraint nodes (3, 2, 1)', 'L1: <= transitive constraint nodes (1, 3, 2)', 'L2: >= transitive constraint nodes (4, 5, 6)', 'L1: discrete on nodes (1, 3)', 'L2: <= transitive constraint nodes (4, 6, 5)', 'L2: <= transitive constraint nodes (4, 5, 6)', 'L1: >= transitive constraint nodes (6, 5, 4)', 'L1: <= transitive constraint nodes (5, 6, 4)', 'L1: <= transitive constraint nodes (1, 2, 3)', 'L1: >= transitive constraint nodes (3, 1, 2)', 'L2: discrete on nodes (4, 5)', 'L1: >= transitive constraint nodes (1, 2, 3)'], 'qpu_access_time': 31830, 'charge_time': 5000000, 'run_time': 5169523, 'problem_id': '31bd3747-5a30-4e63-b7a6-45140e12ace3', 'problem_label': 'Titto - layer - hybrid'}
+
+-------------------------
+
+Sample(sample={'x_(1, 2)': 1.0, 'x_(1, 3)': 0.0, 'x_(2, 1)': 0.0, 'x_(2, 3)': 0.0, 'x_(3, 1)': 1.0, 'x_(3, 2)': 1.0, 'x_(4, 5)': 0.0, 'x_(4, 6)': 0.0, 'x_(5, 4)': 1.0, 'x_(5, 6)': 0.0, 'x_(6, 4)': 1.0, 'x_(6, 5)': 1.0}, energy=1.0, num_occurrences=1, is_satisfied=array([ True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), is_feasible=True)
+
+-------------------------
+
+
+16/04/2023 12:50:38
+
+-------------------------
+
+, (1, 4), (1, 5), (2, 4), (2, 5), (3, 5), (3, 6)
+
+-------------------------
+
+{'constraint_labels': ['L1: <= transitive constraint nodes (3, 1, 2)', 'L1: >= transitive constraint nodes (6, 4, 5)', 'L2: discrete on nodes (5, 6)', 'L1: discrete on nodes (1, 2)', 'L1: >= transitive constraint nodes (1, 2, 3)', 'L2: <= transitive constraint nodes (4, 6, 5)', 'L2: <= transitive constraint nodes (5, 4, 6)', 'L1: <= transitive constraint nodes (6, 4, 5)', 'L1: <= transitive constraint nodes (5, 6, 4)', 'L1: >= transitive constraint nodes (2, 3, 1)', 'L1: >= transitive constraint nodes (6, 5, 4)', 'L2: discrete on nodes (4, 6)', 'L1: <= transitive constraint nodes (2, 3, 1)', 'L2: <= transitive constraint nodes (4, 5, 6)', 'L1: >= transitive constraint nodes (3, 1, 2)', 'L1: <= transitive constraint nodes (1, 3, 2)', 'L1: <= transitive constraint nodes (2, 1, 3)', 'L2: discrete on nodes (4, 5)', 'L1: >= transitive constraint nodes (5, 6, 4)', 'L1: >= transitive constraint nodes (2, 1, 3)', 'L1: >= transitive constraint nodes (3, 2, 1)', 'L1: <= transitive constraint nodes (6, 5, 4)', 'L1: discrete on nodes (2, 3)', 'L1: <= transitive constraint nodes (3, 2, 1)', 'L1: >= transitive constraint nodes (1, 3, 2)', 'L2: >= transitive constraint nodes (4, 5, 6)', 'L1: <= transitive constraint nodes (1, 2, 3)', 'L2: >= transitive constraint nodes (4, 6, 5)', 'L2: >= transitive constraint nodes (5, 4, 6)', 'L1: discrete on nodes (1, 3)'], 'qpu_access_time': 31812, 'charge_time': 5000000, 'run_time': 5133335, 'problem_id': '44d3034c-85be-49bf-beb4-933e6ed598bc', 'problem_label': 'Titto - layer - hybrid'}
+
+-------------------------
+
+Sample(sample={'x_(1, 2)': 0.0, 'x_(1, 3)': 1.0, 'x_(2, 1)': 1.0, 'x_(2, 3)': 1.0, 'x_(3, 1)': 0.0, 'x_(3, 2)': 0.0, 'x_(4, 5)': 1.0, 'x_(4, 6)': 1.0, 'x_(5, 4)': 0.0, 'x_(5, 6)': 1.0, 'x_(6, 4)': 0.0, 'x_(6, 5)': 0.0}, energy=1.0, num_occurrences=1, is_satisfied=array([ True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), is_feasible=True)
+
+-------------------------
+
+
+

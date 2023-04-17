@@ -5,7 +5,7 @@ from dwave.system import LeapHybridCQMSampler, DWaveSampler, EmbeddingComposite
 import dimod
 import dwave.inspector
 
-import dwave.inspector
+
 
 try:
     import matplotlib.pyplot as plt

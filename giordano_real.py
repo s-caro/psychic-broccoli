@@ -101,7 +101,7 @@ def build_cqm(vars: Variables, g: nx.Graph(), fixed_points: list, upperBound: in
 def call_solver(cqm: ConstrainedQuadraticModel) -> SampleSet:
     sampler = LeapHybridCQMSampler()
     #4*sampler.min_time_limit(cqm),
-    res = sampler.sample_cqm(cqm, label="Titto's barycenter method")
+    res = sampler.sample_cqm(cqm, 4*sampler.min_time_limit(cqm), label="Titto's barycenter method")
     return res.first
 
 def create_pos_for_drawing(node_to_pos : dict) -> dict:
@@ -141,11 +141,10 @@ if __name__ == '__main__':
     cqm = build_cqm(vars, G, fixed_points, upperBound)
     
     best_feasible = call_solver(cqm)
-    print(best_feasible.info)
     #print(best_feasible)
     #best_feasible = {'x_0': 0.0, 'x_1': 6.0, 'x_2': 12.0, 'x_3': 6.0, 'x_4': 4.0, 'x_5': 8.0, 'x_6': 6.0, 'y_0': 0.0, 'y_1': 10.0, 'y_2': 0.0, 'y_3': 3.0, 'y_4': 4.0, 'y_5': 4.0, 'y_6': 1.0}
     pos = create_pos_for_drawing(best_feasible[0])
     
     nx.draw(G, pos=pos, node_size=300, edgecolors='k', cmap='hsv', with_labels=True)
     #print(G.edges())s
-    plt.savefig("titto_draw_real_degree_3_decagono_no_obj_larger.png")
+    plt.savefig("titto_draw_real_try.png")
