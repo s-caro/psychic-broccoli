@@ -6,6 +6,9 @@ from dimod import ConstrainedQuadraticModel, Binary, quicksum, cqm_to_bqm, Binar
 from dwave.system import LeapHybridCQMSampler, DWaveSampler, EmbeddingComposite
 import dimod
 import json
+import csv
+import time
+from networkx.algorithms import bipartite
 
 import dwave.inspector
 import pprint
@@ -57,8 +60,20 @@ def _add_constraint_transitive(cqm: ConstrainedQuadraticModel, vars: Variables, 
       if k==j and n!=i:
         cqm.add_constraint(vars.L2[i,j]+vars.L2[k,n] - vars.L2[i,n] <= 1, label=f'L2: <= transitive constraint nodes {i,k,n}')
         cqm.add_constraint(vars.L2[i,j]+vars.L2[k,n] - vars.L2[i,n] >= 0, label=f'L2: >= transitive constraint nodes {i,k,n}')
-        cqm.add_constraint(vars.L2[n,k]+vars.L2[j,i] - vars.L2[n,i] <= 1, label=f'L1: <= transitive constraint nodes {n,k,i}') 
-        cqm.add_constraint(vars.L2[n,k]+vars.L2[j,i] - vars.L2[n,i] >= 0, label=f'L1: >= transitive constraint nodes {n,k,i}')      
+        cqm.add_constraint(vars.L2[n,k]+vars.L2[j,i] - vars.L2[n,i] <= 1, label=f'L2: <= transitive constraint nodes {n,k,i}') 
+        cqm.add_constraint(vars.L2[n,k]+vars.L2[j,i] - vars.L2[n,i] >= 0, label=f'L2: >= transitive constraint nodes {n,k,i}')  
+
+def _add_transitive_implication_constraint(cqm: ConstrainedQuadraticModel, vars: Variables, G: nx.Graph):
+  for index, (i,j) in enumerate(list(vars.L1.keys())[:-1]):
+    for (k,n) in list(vars.L1.keys())[index+1:]:
+      if k==j and n!=i:
+        cqm.add_constraint(1-(vars.L1[i,j]*vars.L1[k,n])+vars.L1[i,n] >= 1, label=f'L1: transitive constraint nodes {i,k,n}')
+        cqm.add_constraint(1-(vars.L1[n,k]*vars.L1[j,i])+vars.L1[n,i] >= 1, label=f'L1: transitive constraint nodes {n,k,i}')
+  for index, (i,j) in enumerate(list(vars.L2.keys())[:-1]):
+    for (k,n) in list(vars.L2.keys())[index+1:]:
+      if k==j and n!=i:
+        cqm.add_constraint(1-(vars.L2[i,j]*vars.L2[k,n])+vars.L2[i,n] >= 1, label=f'L2: transitive constraint nodes {i,k,n}')
+        cqm.add_constraint(1-(vars.L2[n,k]*vars.L2[j,i])+vars.L2[n,i] >= 1, label=f'L2: transitive constraint nodes {n,k,i}')    
 
 def _set_objective(cqm: ConstrainedQuadraticModel, vars: Variables, G: nx.Graph):
   tot = 0
@@ -89,7 +104,7 @@ def build_cqm(G: nx.DiGraph) -> ConstrainedQuadraticModel:
   cqm = ConstrainedQuadraticModel()
   _add_variable(cqm, G)
   _add_constraint_discrete(cqm, vars, G)
-  _add_constraint_transitive(cqm, vars, G)
+  _add_transitive_implication_constraint(cqm, vars, G)
   _set_objective(cqm, vars, G)
 
   return cqm
@@ -108,50 +123,61 @@ def convert_file_to_list(line):
   for el in line:
     if len(el) == 4:
       if int(el[0]) != int(el[3]):
-        edge_list.append((int(el[0]),int(el[3])))
+        edge = sorted((int(el[0]),int(el[3])))
+        edge_list.append(edge)
     if len(el) == 6:
       if int(el[0]) != int(el[4]) or int(el[1]) != int(el[5]):
         num1 = int(el[0])*10 + int(el[1])
         num2 = int(el[4])*10 + int(el[5])
-        edge_list.append((num1, num2))
+        edge = sorted((num1, num2))
+        edge_list.append(edge)
     if len(el) == 5:
       if el[1] != ',':
         num1 = int(el[0])*10 + int(el[1])
-        edge_list.append((num1, int(el[4])))
+        edge = sorted((num1, int(el[4])))
+        edge_list.append(edge)
       else:
         num2 = int(el[3])*10 + int(el[4])
-        edge_list.append((int(el[0]), num2))
+        edge = sorted((int(el[0]), num2))
+        edge_list.append(edge)
   return edge_list
 
 if __name__ == '__main__':
-  file_edges = open('evaluation/dataset1_10_10_(5,95).txt','r')
+  file_edges = open('evaluation/experimental_dataset.txt','r')
   lines = file_edges.readlines()
 
-  f = open('2-layer-cross-min.csv','a')
-  header =['# nodes', '# edges', '#is feasible', '# crosses', 'qpu_access_time', 'charge_time','run_time', 'total time']
+  f = open('experimental_dataset.csv','a')
+  header =['# nodes', '# edges', '#is feasible', '# crosses', 'qpu_access_time', 'charge_time','run_time', 'total time','num_Constraints']
   writer = csv.writer(f)
   writer.writerow(header)
   f.close()
   
-  for index,line in enumerate(lines[173:]):
-    f = open('2-layer-cross-min.csv','a')
+  for index,line in enumerate(lines[0:]):
+    f = open('experimental_dataset.csv','a')
+    
     clear_line = line.replace('\n','').replace(')','').replace('(','').split('_')
+    print("start reading")
     edges = sorted(convert_file_to_list(clear_line))
-
     #edges = [(3,5),(3,6),(1,4),(1,5),(2,5)]
-    G = nx.from_edgelist(edges)
+    G = nx.DiGraph(edges)
+    print("start building")
     cqm = build_cqm(G)
+
     sampler = LeapHybridCQMSampler()
+    
     #4*sampler.min_time_limit(cqm),
+    print("start sampling")
+    start_time = time.time()
     res = sampler.sample_cqm(cqm,  label="Titto - cross min - hybrid")
+    end = time.time() - start_time
     try:
       feasible_sampleset = res.filter(lambda row: row.is_feasible)
+
       #pprint.pprint(feasible_sampleset.first)
-      data = [str(len(G.nodes)), str(len(G.edges)), 'yes', str(feasible_sampleset.first.energy), str(res.info['qpu_access_time']), str(res.info['charge_time']), str(res.info['run_time'])]
+      data = [len(G.nodes), len(G.edges), 'yes', feasible_sampleset.first.energy, res.info['qpu_access_time'], res.info['charge_time'], res.info['run_time'], end,len(cqm.constraints)]
     except (StopIteration, ValueError) as error:
-      data = [str(len(G.nodes)), str(len(G.edges)), 'no', '//', str(res.info['qpu_access_time']), str(res.info['charge_time']), str(res.info['run_time'])]
+      data = [len(G.nodes), len(G.edges), 'no', '//', res.info['qpu_access_time'], res.info['charge_time'], res.info['run_time'], end, len(cqm.constraints)]
     writer = csv.writer(f)
     writer.writerow(data)
     f.close()
-    print(f"done: {index+173} / {len(lines)}")
-
+    print(f"done: {index} / {len(lines)}")
