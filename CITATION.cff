@@ -1,1 +1,17 @@
-
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Da Lozzo"
+  given-names: "Giordano"
+  orcid: "https://orcid.org/0000-0003-2396-5174"
+- family-names: "Di Battista"
+  given-names: "Giuseppe"
+  orcid: "https://orcid.org/0000-0003-4224-1550"
+- family-names: "Caroppo"
+  given-names: "Susanna"
+  orcid: "https://orcid.org/0009-0001-4538-8198"
+title: "Quantum Graph Drawing"
+version: 2.0.4
+doi: https://doi.org/10.1007/978-981-97-0566-5_4
+date-released: 2024-02-29
+url: "https://github.com/s-caro/psychic-broccoli"
